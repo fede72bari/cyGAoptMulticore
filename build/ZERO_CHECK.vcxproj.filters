@@ -1,0 +1,13 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <CustomBuild Include="D:\Dropbox\TRADING\TRADING PROPERTY LIBRARIES\cyGAoptMulticore\build\CMakeFiles\8e9172bf85aa311dc48c20e6096ce3ed\generate.stamp.rule">
+      <Filter>CMake Rules</Filter>
+    </CustomBuild>
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="CMake Rules">
+      <UniqueIdentifier>{ABCD2509-0D73-349B-88BD-FBDBDD54AFC3}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>

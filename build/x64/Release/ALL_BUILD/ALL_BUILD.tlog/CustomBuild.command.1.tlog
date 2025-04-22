@@ -1,0 +1,10 @@
+^D:\DROPBOX\TRADING\TRADING PROPERTY LIBRARIES\CYGAOPTMULTICORE\CMAKELISTS.TXT
+setlocal
+"C:\Program Files\CMake\bin\cmake.exe" "-SD:/Dropbox/TRADING/TRADING PROPERTY LIBRARIES/cyGAoptMulticore" "-BD:/Dropbox/TRADING/TRADING PROPERTY LIBRARIES/cyGAoptMulticore/build" --check-stamp-file "D:/Dropbox/TRADING/TRADING PROPERTY LIBRARIES/cyGAoptMulticore/build/CMakeFiles/generate.stamp"
+if %errorlevel% neq 0 goto :cmEnd
+:cmEnd
+endlocal & call :cmErrorLevel %errorlevel% & goto :cmDone
+:cmErrorLevel
+exit /b %1
+:cmDone
+if %errorlevel% neq 0 goto :VCEnd

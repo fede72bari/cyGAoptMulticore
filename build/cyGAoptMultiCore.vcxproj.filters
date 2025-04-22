@@ -1,0 +1,16 @@
+﻿<?xml version="1.0" encoding="utf-8"?>
+<Project ToolsVersion="17.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <ItemGroup>
+    <ClCompile Include="D:\Dropbox\TRADING\TRADING PROPERTY LIBRARIES\cyGAoptMulticore\cyGAoptMultiCore.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <CustomBuild Include="D:\Dropbox\TRADING\TRADING PROPERTY LIBRARIES\cyGAoptMulticore\CMakeLists.txt" />
+  </ItemGroup>
+  <ItemGroup>
+    <Filter Include="Source Files">
+      <UniqueIdentifier>{FE6A05BF-57E5-3511-925C-BC0B0731728A}</UniqueIdentifier>
+    </Filter>
+  </ItemGroup>
+</Project>
