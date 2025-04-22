@@ -30,7 +30,9 @@ std::vector<double> run_genetic_algorithm(
     std::optional<std::vector<double>> ub = std::nullopt,
     int steps_n = 100,
     std::optional<std::vector<double>> initial_vector_opt = std::nullopt,
-    std::optional<int> n_cycles_opt = std::nullopt
+    std::optional<int> n_cycles_opt = std::nullopt,
+    bool genetic_elitism = true,
+    int elitism_elements = 10
 ) {
     std::random_device rd;
     std::mt19937 gen(rd());
@@ -84,59 +86,72 @@ std::vector<double> run_genetic_algorithm(
     std::vector<double> best_individual;
     double best_fitness = -1e9;
 
-    for (int gen_index = 0; gen_index < NGEN; ++gen_index) {
-        std::vector<std::pair<double, std::vector<double>>> evaluated(population.size());
+	std::vector<std::pair<double, std::vector<double>>> evaluated(population.size());
+	std::vector<double> hall_of_fame;
+	double hall_of_fame_fitness = -1e9;
 
-        #pragma omp parallel for
-        for (int i = 0; i < static_cast<int>(population.size()); ++i) {
-            evaluated[i] = std::make_pair(evaluate_fitness(population[i]), population[i]);
-        }
+	for (int gen_index = 0; gen_index < NGEN; ++gen_index) {
+		#pragma omp parallel for
+		for (int i = 0; i < static_cast<int>(population.size()); ++i) {
+			evaluated[i] = std::make_pair(evaluate_fitness(population[i]), population[i]);
+		}
 
-        std::sort(evaluated.begin(), evaluated.end(), [](auto& a, auto& b) { return a.first > b.first; });
+		std::sort(evaluated.begin(), evaluated.end(), [](auto& a, auto& b) {
+			return a.first > b.first;
+		});
 
-        best_individual = evaluated[0].second;
-        best_fitness = evaluated[0].first;
+		if (evaluated[0].first > hall_of_fame_fitness) {
+			hall_of_fame_fitness = evaluated[0].first;
+			hall_of_fame = evaluated[0].second;
+		}
 
-        std::vector<std::vector<double>> offspring;
-        while (offspring.size() < population_n) {
-            std::uniform_int_distribution<> pick(0, static_cast<int>(evaluated.size()) - 1);
+		std::vector<std::vector<double>> offspring;
 
-            auto parent1 = evaluated[pick(gen)].second;
-            auto parent2 = evaluated[pick(gen)].second;
+		if (genetic_elitism) {
+			for (int i = 0; i < elitism_elements && i < static_cast<int>(evaluated.size()); ++i) {
+				offspring.push_back(evaluated[i].second);
+			}
+		}
 
-            std::vector<double> child1 = parent1;
-            std::vector<double> child2 = parent2;
+		while (offspring.size() < population_n) {
+			std::uniform_int_distribution<> pick(0, static_cast<int>(evaluated.size()) - 1);
+			auto parent1 = evaluated[pick(gen)].second;
+			auto parent2 = evaluated[pick(gen)].second;
 
-            for (int i = 0; i < gene_length; i += block_size) {
-                if (dis_01(gen) < CXPB) {
-                    for (int j = 0; j < block_size; ++j)
-                        if (i + j < gene_length)
-                            std::swap(child1[i + j], child2[i + j]);
-                }
-            }
+			std::vector<double> child1 = parent1;
+			std::vector<double> child2 = parent2;
 
-            for (int i = 0; i < gene_length; i += block_size) {
-                if (dis_01(gen) < MUTPB) {
-                    for (int j = 0; j < block_size; ++j)
-                        if (i + j < gene_length)
-                            child1[i + j] = generate_discrete_value(i + j);
-                }
-                if (dis_01(gen) < MUTPB) {
-                    for (int j = 0; j < block_size; ++j)
-                        if (i + j < gene_length)
-                            child2[i + j] = generate_discrete_value(i + j);
-                }
-            }
+			for (int i = 0; i < gene_length; i += block_size) {
+				if (dis_01(gen) < CXPB) {
+					for (int j = 0; j < block_size; ++j)
+						if (i + j < gene_length)
+							std::swap(child1[i + j], child2[i + j]);
+				}
+			}
 
-            offspring.push_back(child1);
-            if (offspring.size() < population_n)
-                offspring.push_back(child2);
-        }
+			for (int i = 0; i < gene_length; i += block_size) {
+				if (dis_01(gen) < MUTPB) {
+					for (int j = 0; j < block_size; ++j)
+						if (i + j < gene_length)
+							child1[i + j] = generate_discrete_value(i + j);
+				}
+				if (dis_01(gen) < MUTPB) {
+					for (int j = 0; j < block_size; ++j)
+						if (i + j < gene_length)
+							child2[i + j] = generate_discrete_value(i + j);
+				}
+			}
 
-        population = std::move(offspring);
-    }
+			offspring.push_back(child1);
+			if (offspring.size() < population_n)
+				offspring.push_back(child2);
+		}
 
-    return best_individual;
+		population = std::move(offspring);
+	}
+
+
+    return hall_of_fame;
 }
 
 PYBIND11_MODULE(cyGAoptMultiCore, m) {
@@ -150,6 +165,8 @@ PYBIND11_MODULE(cyGAoptMultiCore, m) {
         py::arg("ub") = std::nullopt,
         py::arg("steps_n") = 100,
         py::arg("initial_vector_opt") = std::nullopt,
-        py::arg("n_cycles_opt") = std::nullopt
+        py::arg("n_cycles_opt") = std::nullopt,
+		py::arg("genetic_elitism") = true,
+		py::arg("elitism_elements") = 10
     );
 }

@@ -217,7 +217,7 @@ cyGAoptMultiCore_IS_TOP_LEVEL:STATIC=ON
 cyGAoptMultiCore_SOURCE_DIR:STATIC=D:/Dropbox/TRADING/TRADING PROPERTY LIBRARIES/cyGAoptMulticore
 
 //No help, variable specified on the command line.
-pybind11_DIR:UNINITIALIZED=C:\Users\Federico\anaconda3\envs\cyenv\lib\site-packages\pybind11\share\cmake\pybind11
+pybind11_DIR:UNINITIALIZED=C:\Users\Federico\anaconda3\envs\cyenv\Lib\site-packages\pybind11\share\cmake\pybind11
 
 
 ########################
