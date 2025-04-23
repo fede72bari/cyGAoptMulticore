@@ -28,7 +28,12 @@ double evaluate_fitness(const std::vector<double>& individual) {
 
 double evaluate_fitness(const std::vector<double>& individual,
                         const std::vector<double>& reference_signal,
-                        int n_cycles) {
+                        int n_cycles,
+                        int start_rebuild_index,
+                        bool period_related_rebuild_range,
+                        double period_multiplier)
+
+{
 
     int offset_amp = 0;
     int offset_freq = n_cycles;
@@ -51,10 +56,48 @@ double evaluate_fitness(const std::vector<double>& individual,
     }
 
     double mse = 0.0;
-    for (size_t t = 0; t < len; ++t) {
-        double err = reference_signal[t] - signal[t];
-        mse += err * err;
-    }
+	
+	size_t compare_start = 0;
+
+	if (period_related_rebuild_range) {
+		double min_freq = *std::min_element(freqs.begin(), freqs.end());
+		double period = 1.0 / min_freq;
+		compare_start = len - static_cast<size_t>(period * period_multiplier);
+		if (compare_start < static_cast<size_t>(start_rebuild_index))
+			compare_start = static_cast<size_t>(start_rebuild_index);
+	} else {
+		compare_start = static_cast<size_t>(start_rebuild_index);
+	}
+
+
+
+	// Calcola media e deviazione standard
+	double ref_sum = 0.0, ref_sq_sum = 0.0;
+	double sig_sum = 0.0, sig_sq_sum = 0.0;
+	size_t n = len - compare_start;
+
+	for (size_t t = compare_start; t < len; ++t) {
+		ref_sum += reference_signal[t];
+		ref_sq_sum += reference_signal[t] * reference_signal[t];
+
+		sig_sum += signal[t];
+		sig_sq_sum += signal[t] * signal[t];
+	}
+
+	double ref_mean = ref_sum / n;
+	double ref_std = std::sqrt(ref_sq_sum / n - ref_mean * ref_mean);
+	double sig_mean = sig_sum / n;
+	double sig_std = std::sqrt(sig_sq_sum / n - sig_mean * sig_mean);
+
+	// Calcola errore sui segnali normalizzati e moltiplicati per 100
+	for (size_t t = compare_start; t < len; ++t) {
+		double ref_norm = ((reference_signal[t] - ref_mean) / ref_std) * 100.0;
+		double sig_norm = ((signal[t] - sig_mean) / sig_std) * 100.0;
+		double err = ref_norm - sig_norm;
+		mse += err * err;
+	}
+
+
 
     return -mse / len;  // negate MSE so higher is better
 }
@@ -78,8 +121,12 @@ std::vector<double> run_genetic_algorithm(
     std::optional<bool> initial_random_amplitudes_opt = std::nullopt,
     bool optimize_amplitudes = true,
     bool optimize_frequencies = true,
-    bool optimize_phases = true
-){
+    bool optimize_phases = true,
+    int start_rebuild_index = 0,
+    bool period_related_rebuild_range = false,
+    double period_multiplier = 1.0
+)
+{
     std::random_device rd;
     std::mt19937 gen(rd());
     std::uniform_real_distribution<> dis_01(0.0, 1.0);
@@ -143,7 +190,7 @@ std::vector<double> run_genetic_algorithm(
 		for (int i = 0; i < static_cast<int>(population.size()); ++i) {
 //			evaluated[i] = std::make_pair(evaluate_fitness(population[i]), population[i]);
 			evaluated[i] = std::make_pair(
-				evaluate_fitness(population[i], reference_signal, n_cycles),
+				evaluate_fitness(population[i], reference_signal, n_cycles, start_rebuild_index, period_related_rebuild_range, period_multiplier),
 				population[i]
 			);
 
@@ -239,8 +286,12 @@ PYBIND11_MODULE(cyGAoptMultiCore, m) {
 		py::arg("initial_random_amplitudes") = false,
 		py::arg("optimize_amplitudes") = true,
 		py::arg("optimize_frequencies") = true,
-		py::arg("optimize_phases") = true
-	);
+		py::arg("optimize_phases") = true,
+		py::arg("start_rebuild_index") = 0,
+		py::arg("period_related_rebuild_range") = false,
+		py::arg("period_multiplier") = 1.0
 
+	);
 }
+
 
